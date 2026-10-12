@@ -4,7 +4,6 @@
 <head>
   <meta charset=utf8>
   <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <script>document.documentElement.classList.add('js');</script>
   <style>
     :root {
       color-scheme: light;
@@ -107,7 +106,9 @@
       max-width: 1360px;
       margin-inline: auto;
       padding-inline: var(--gutter);
-      padding-block: 0
+      padding-block: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .mono {
@@ -277,12 +278,6 @@
       margin-top: clamp(40px, 6vw, 90px);
     }
 
-    @media (prefers-reduced-motion: no-preference) {
-      html.js .hero-badge-card {
-        transform: translate3d(0, -120vh, 0);
-      }
-    }
-
     .hero-badge-card {
       width: clamp(250px, 24vw, 340px);
       position: relative;
@@ -336,11 +331,6 @@
       z-index: 0;
       user-select: none;
       -webkit-user-select: none;
-    }
-
-    main.wrap {
-      position: relative;
-      z-index: 1;
     }
 
     .lanyard-canvas {
@@ -1193,8 +1183,8 @@
     }
   </style>
 
-  <div class="cursor" id="cursor" aria-hidden="true"><span>Drag</span></div>
   <canvas id="starfieldCanvas" class="starfield-canvas" aria-hidden="true"></canvas>
+  <div class="cursor" id="cursor" aria-hidden="true"><span>Drag</span></div>
   <canvas id="lanyardCanvas" class="lanyard-canvas" aria-hidden="true"></canvas>
 
   <nav class="nav" aria-label="Primary">
@@ -1847,40 +1837,10 @@
           cachedBaseTop = cardRect.top - y;
         }
 
-        // Intro drop animation from top of screen
-        var isDropping = !RM;
-        var dropStartTime = 0;
-        var dropDelay = 120; // ms brief pause for initial paint
-        var dropDuration = 1050; // ms graceful entry duration
-        var dropStartY = 0;
-
-        function calcDropStartY() {
-          return -(cachedBaseTop + cachedCardH + 50);
-        }
-
-        function dropEase(t) {
-          if (t < 0.65) {
-            var p = t / 0.65;
-            return (1 - Math.cos(p * Math.PI)) / 2 * 1.05;
-          } else {
-            var p = (t - 0.65) / 0.35;
-            var decay = Math.exp(-4 * p);
-            return 1 + 0.05 * decay * Math.cos(p * Math.PI * 2.5);
-          }
-        }
-
-        function rotEase(t) {
-          var decay = Math.exp(-3.5 * t);
-          return -5 * decay * Math.cos(t * Math.PI * 2.5);
-        }
-
         function resizeCanvas() {
           if (!canvas || !ctx) return;
           var w = window.innerWidth, h = window.innerHeight;
           updateMetrics();
-          if (isDropping) {
-            dropStartY = calcDropStartY();
-          }
           // Mobile Optimization: Cap DPR on mobile screens to avoid clearing & drawing 3M+ pixels per frame
           var maxDpr = isTouchDevice ? 1.5 : 2;
           dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
@@ -1902,13 +1862,6 @@
         var x = 0, y = 0;
         var vx = 0, vy = 0;
         var rot = 0, vRot = 0;
-
-        if (isDropping) {
-          dropStartY = calcDropStartY();
-          y = dropStartY;
-          rot = -5;
-          applyTransform();
-        }
 
         // Hover tilt
         var hoverX = 0, hoverY = 0;
@@ -1934,12 +1887,6 @@
           var anchorX = cachedBaseLeft + cardW * 0.524;
           var anchorY = Math.min(cachedNavH - 6, 48);
 
-          // If badge is still falling from above anchor line, keep canvas clean
-          if (claspY < anchorY - 6) {
-            ctx.restore();
-            return;
-          }
-
           var strapW = Math.max(22, Math.min(34, cardW * (88 / 820)));
 
           var dx = claspX - anchorX;
@@ -1954,16 +1901,16 @@
           var tanClaspY = -Math.cos(rad);
 
           var cp1, cp2;
-          if (isDropping || dist >= restLen) {
-            // Taut strap following falling path under tension
-            cp1 = { x: anchorX + dx * 0.32, y: anchorY + dy * 0.32 };
-            cp2 = { x: claspX + tanClaspX * (dist * 0.2), y: claspY + tanClaspY * (dist * 0.2) };
-          } else {
+          if (dist < restLen) {
             // Slack when card is moved closer to anchor (dragged upward)
             var slack = restLen - dist;
             var sag = Math.min(slack * 0.8, 220);
             cp1 = { x: anchorX, y: anchorY + dist * 0.35 + sag * 0.4 };
             cp2 = { x: claspX + tanClaspX * (dist * 0.25), y: claspY + tanClaspY * (dist * 0.25) + sag };
+          } else {
+            // Taut strap under tension
+            cp1 = { x: anchorX + dx * 0.32, y: anchorY + dy * 0.32 };
+            cp2 = { x: claspX + tanClaspX * (dist * 0.2), y: claspY + tanClaspY * (dist * 0.2) };
           }
 
           var steps = isTouchDevice ? 16 : 24;
@@ -2104,37 +2051,6 @@
           lastRafTime = t;
           var busy = false;
 
-          // Intro drop animation phase from top of screen
-          if (isDropping) {
-            if (!dropStartTime) {
-              dropStartTime = t;
-            }
-            var elapsed = t - dropStartTime;
-            if (elapsed < dropDelay) {
-              y = dropStartY;
-              rot = -5;
-              busy = true;
-            } else {
-              var prog = Math.min(1, (elapsed - dropDelay) / dropDuration);
-              var factor = dropEase(prog);
-              y = dropStartY * (1 - factor);
-              rot = rotEase(prog);
-              if (prog >= 1) {
-                isDropping = false;
-                y = 0;
-                rot = 0;
-                vx = 0;
-                vy = 0;
-                vRot = 0;
-              } else {
-                busy = true;
-              }
-            }
-            applyTransform();
-            bRaf = busy ? requestAnimationFrame(badgeTick) : 0;
-            return;
-          }
-
           // Hover interpolation
           var hFactor = isHeld ? 0.2 : 0.12;
           hoverX += (targetHoverX - hoverX) * hFactor;
@@ -2189,9 +2105,8 @@
           }
         }
 
-        // Initial render & drop kickoff
-        bKick();
-        setTimeout(function () { bKick(); }, 30);
+        // Initial render
+        setTimeout(function () { bKick(); }, 50);
 
         // Hover
         card.addEventListener('pointerenter', function (e) {
@@ -2256,9 +2171,6 @@
         // Grab
         card.addEventListener('pointerdown', function (e) {
           if (e.pointerType === 'mouse' && e.button !== 0) return;
-          if (isDropping) {
-            isDropping = false;
-          }
           updateMetrics();
           isHeld = true;
           pointerId = e.pointerId;
@@ -2306,9 +2218,6 @@
 
         // Keyboard accessibility
         card.addEventListener('keydown', function (e) {
-          if (isDropping) {
-            isDropping = false;
-          }
           var step = e.shiftKey ? 60 : 30;
           if (e.key === 'ArrowLeft') {
             e.preventDefault(); x -= step; vx -= step * 5; bKick();
@@ -2337,206 +2246,272 @@
         });
       })();
 
-      /* 5. Subtle Animated Celestial Starfield Background */
+      /* 5. Subtle Cosmic Starfield Background */
       window.Starfield = (function () {
         var canvas = document.getElementById('starfieldCanvas');
-        if (!canvas) return { init: function () {}, destroy: function () {} };
+        if (!canvas) return { init: function () { }, destroy: function () { } };
 
         var ctx = canvas.getContext('2d');
-        if (!ctx) return { init: function () {}, destroy: function () {} };
+        if (!ctx) return { init: function () { }, destroy: function () { } };
 
         var stars = [];
-        var w = 0, h = 0, dpr = 1;
         var rafId = 0;
+        var startTime = 0;
         var lastTime = 0;
-        var elapsedTime = 0;
+        var dpr = 1;
+        var width = 0, height = 0;
+        var isMobile = false;
         var isDestroyed = false;
 
-        function drawSparkle(context, x, y, size, alpha) {
-          context.save();
-          // Delicate 4-pointed astroid sparkle (inward curved diamond)
-          context.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
-          context.beginPath();
-          context.moveTo(x, y - size);
-          context.quadraticCurveTo(x, y, x + size * 0.82, y);
-          context.quadraticCurveTo(x, y, x, y + size);
-          context.quadraticCurveTo(x, y, x - size * 0.82, y);
-          context.quadraticCurveTo(x, y, x, y - size);
-          context.closePath();
-          context.fill();
+        var mqlMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        var prefersReducedMotion = mqlMotion.matches;
 
-          // Tiny luminous center core
-          context.fillStyle = 'rgba(255, 255, 255, ' + Math.min(0.35, alpha * 1.35).toFixed(3) + ')';
-          context.beginPath();
-          context.arc(x, y, size * 0.22, 0, Math.PI * 2);
-          context.fill();
+        function updateDimensions() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (width < 768);
+          var maxDpr = isMobile ? 1.5 : 2;
+          dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
 
-          // Soft faint radial glow
-          var glow = context.createRadialGradient(x, y, 0, x, y, size * 1.6);
-          glow.addColorStop(0, 'rgba(255, 255, 255, ' + (alpha * 0.32).toFixed(3) + ')');
-          glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          context.fillStyle = glow;
-          context.beginPath();
-          context.arc(x, y, size * 1.6, 0, Math.PI * 2);
-          context.fill();
-
-          context.restore();
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
         }
 
-        function drawDot(context, x, y, radius, alpha) {
-          context.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
-          context.beginPath();
-          context.arc(x, y, radius, 0, Math.PI * 2);
-          context.fill();
+        function createStar(w, h, isMob) {
+          var isFourPoint = Math.random() < 0.085; // ~8.5% four-point sparkle stars
+          var baseSize = isFourPoint
+            ? (isMob ? 2.2 : 2.6) + Math.random() * (isMob ? 1.2 : 1.6) // 4-point sparkle arm (2.2 - 4.2px)
+            : (isMob ? 0.45 : 0.55) + Math.random() * (isMob ? 0.75 : 1.05); // dot radius (0.5 - 1.6px)
+
+          var targetY = Math.random() * h;
+          var x = Math.random() * w;
+          var depth = targetY / Math.max(1, h); // 0 at top, 1 at bottom
+
+          // Staggered intro delay across 6-10s: stars near top enter first, stars near bottom follow
+          var staggerDelay = (depth * 3.8) + (Math.random() * 2.2); // 0 to 6.0s
+          var introDuration = 3.2 + Math.random() * 1.8; // 3.2 to 5.0s descent duration
+          var startY = -15 - Math.random() * 30;
+
+          return {
+            isFourPoint: isFourPoint,
+            size: baseSize,
+            baseAlpha: isFourPoint
+              ? 0.12 + Math.random() * 0.12 // 0.12 - 0.24 for delicate sparkles
+              : 0.07 + Math.random() * 0.13, // 0.07 - 0.20 for quiet celestial dots
+            alpha: 0,
+            x: x,
+            baseX: x,
+            y: prefersReducedMotion ? targetY : startY,
+            startY: startY,
+            targetY: targetY,
+
+            // Entrance state
+            staggerDelay: staggerDelay,
+            introDuration: introDuration,
+            isIntroComplete: prefersReducedMotion,
+
+            // Continuous organic drift
+            speedY: (isMob ? 0.08 : 0.11) + Math.random() * (isMob ? 0.13 : 0.19), // ~7-18 px/s gentle drift
+            swayAmp: 4 + Math.random() * 12, // 4 to 16px horizontal drift
+            swayFreq: 0.0004 + Math.random() * 0.0005, // very slow sinusoidal sway
+            swayPhase: Math.random() * Math.PI * 2,
+
+            // Gentle twinkle
+            twinkleFreq: 0.0012 + Math.random() * 0.002,
+            twinklePhase: Math.random() * Math.PI * 2,
+            twinkleDepth: 0.22 + Math.random() * 0.32,
+
+            // Recycle smooth fade-in
+            recycledAt: 0
+          };
         }
 
-        function initStars() {
+        function buildStarfield() {
           stars = [];
-          var isMobile = window.innerWidth < 768;
-          // Responsive distribution: plenty of space, calm and non-distracting
+          // Responsive density: increased quantity while maintaining an elegant, quiet aesthetic
           var count = isMobile
-            ? Math.round(Math.min(42, Math.max(26, (w * h) / 19000)))
-            : Math.round(Math.min(95, Math.max(55, (w * h) / 16000)));
+            ? Math.floor(Math.min(65, Math.max(38, (width * height) / 6500)))
+            : Math.floor(Math.min(160, Math.max(85, (width * height) / 12500)));
 
           for (var i = 0; i < count; i++) {
-            var isSparkle = Math.random() < 0.12; // ~12% are 4-point stars
-            var targetY = Math.random() * h;
-            var yFrac = targetY / h; // 0 at top to 1 at bottom
-
-            // Stagger: stars near the top start earlier, cascading downward across 6-10s
-            var enterDelay = (yFrac * 5.8) + (Math.random() * 1.6);
-            var fadeDuration = 1.8 + Math.random() * 0.8;
-            var initialYOffset = 25 + Math.random() * 35;
-            var startY = targetY - initialYOffset;
-            var x = Math.random() * w;
-
-            stars.push({
-              x: x,
-              y: RM ? targetY : startY,
-              baseX: x,
-              targetY: targetY,
-              type: isSparkle ? 'sparkle' : 'dot',
-              size: isSparkle ? (3.5 + Math.random() * 2.0) : (0.65 + Math.random() * 0.7),
-              baseAlpha: isSparkle ? (0.13 + Math.random() * 0.11) : (0.08 + Math.random() * 0.14),
-              twinkleAmp: 0.03 + Math.random() * 0.045,
-              twinkleSpeed: 0.9 + Math.random() * 1.3,
-              twinklePhase: Math.random() * Math.PI * 2,
-              speedY: isSparkle ? (7.0 + Math.random() * 4.5) : (4.0 + Math.random() * 6.5),
-              driftAmp: 6.0 + Math.random() * 14.0,
-              driftFreq: 0.18 + Math.random() * 0.25,
-              driftPhase: Math.random() * Math.PI * 2,
-              enterDelay: enterDelay,
-              fadeDuration: fadeDuration,
-              introAlpha: RM ? 1.0 : 0.0
-            });
+            stars.push(createStar(width, height, isMobile));
           }
+        }
+
+        function drawFourPointStar(c, cx, cy, arm, alpha) {
+          c.save();
+          c.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
+          c.beginPath();
+          c.moveTo(cx, cy - arm);
+          c.quadraticCurveTo(cx, cy, cx + arm, cy);
+          c.quadraticCurveTo(cx, cy, cx, cy + arm);
+          c.quadraticCurveTo(cx, cy, cx - arm, cy);
+          c.quadraticCurveTo(cx, cy, cx, cy - arm);
+          c.closePath();
+          c.fill();
+
+          // Subtle core flare
+          c.beginPath();
+          c.arc(cx, cy, Math.max(0.6, arm * 0.22), 0, Math.PI * 2);
+          c.fillStyle = 'rgba(255, 255, 255, ' + Math.min(1, alpha * 1.5).toFixed(3) + ')';
+          c.fill();
+          c.restore();
+        }
+
+        function drawDotStar(c, cx, cy, radius, alpha) {
+          c.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.fill();
         }
 
         function renderStatic() {
-          ctx.clearRect(0, 0, w, h);
+          if (!ctx) return;
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+
           for (var i = 0; i < stars.length; i++) {
             var s = stars[i];
-            if (s.type === 'sparkle') {
-              drawSparkle(ctx, s.baseX, s.targetY, s.size, s.baseAlpha);
+            if (s.isFourPoint) {
+              drawFourPointStar(ctx, s.x, s.targetY, s.size, s.baseAlpha);
             } else {
-              drawDot(ctx, s.baseX, s.targetY, s.size, s.baseAlpha);
+              drawDotStar(ctx, s.x, s.targetY, s.size, s.baseAlpha);
             }
           }
-        }
-
-        function resize() {
-          w = window.innerWidth;
-          h = window.innerHeight;
-          dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-          canvas.width = Math.round(w * dpr);
-          canvas.height = Math.round(h * dpr);
-          canvas.style.width = w + 'px';
-          canvas.style.height = h + 'px';
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-          if (RM) {
-            initStars();
-            renderStatic();
-          } else if (stars.length === 0) {
-            initStars();
-          }
+          ctx.restore();
         }
 
         function tick(now) {
           if (isDestroyed) return;
+          if (!startTime) startTime = now;
           if (!lastTime) lastTime = now;
-          var dt = Math.min(0.064, (now - lastTime) / 1000);
-          lastTime = now;
-          elapsedTime += dt;
 
-          ctx.clearRect(0, 0, w, h);
+          var dt = Math.min(0.05, (now - lastTime) / 1000);
+          lastTime = now;
+          var elapsedSec = (now - startTime) / 1000;
+          var dtFactor = dt / 0.0166;
+
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
 
           for (var i = 0; i < stars.length; i++) {
             var s = stars[i];
 
-            // Progressive intro fade-in from top to bottom
-            if (s.introAlpha < 1.0) {
-              if (elapsedTime >= s.enterDelay) {
-                var p = (elapsedTime - s.enterDelay) / s.fadeDuration;
-                s.introAlpha = Math.min(1.0, Math.max(0.0, p));
+            if (!s.isIntroComplete) {
+              // Staggered entrance phase from top of screen
+              if (elapsedSec < s.staggerDelay) {
+                continue;
+              }
+              var p = (elapsedSec - s.staggerDelay) / s.introDuration;
+              if (p >= 1) {
+                s.isIntroComplete = true;
+                s.y = s.targetY;
+                s.alpha = s.baseAlpha;
+              } else {
+                var ease = 1 - Math.pow(1 - p, 2.5);
+                s.y = s.startY + (s.targetY - s.startY) * ease;
+                var fade = Math.min(1, p * 1.5);
+                s.alpha = s.baseAlpha * fade;
+              }
+            } else {
+              // Continuous organic drift & twinkle
+              s.y += s.speedY * dtFactor;
+              s.x = s.baseX + Math.sin(now * s.swayFreq + s.swayPhase) * s.swayAmp;
+
+              var tw = 1 - s.twinkleDepth + s.twinkleDepth * Math.sin(now * s.twinkleFreq + s.twinklePhase);
+              var curAlpha = s.baseAlpha * tw;
+
+              // Smooth fade-in if recently recycled from top
+              if (s.recycledAt) {
+                var recP = Math.min(1, (now - s.recycledAt) / 1400);
+                curAlpha *= recP;
+                if (recP >= 1) s.recycledAt = 0;
+              }
+              s.alpha = curAlpha;
+
+              // Smooth recycling when leaving bottom edge
+              if (s.y > height + 16) {
+                s.y = -14;
+                s.baseX = Math.random() * width;
+                s.x = s.baseX;
+                s.alpha = 0;
+                s.recycledAt = now;
               }
             }
 
-            if (s.introAlpha > 0.001) {
-              // Subtle slow downward drift
-              s.y += s.speedY * dt;
-
-              // Gentle lateral drift oscillation
-              var driftOffset = Math.sin(elapsedTime * s.driftFreq + s.driftPhase) * s.driftAmp;
-              var currentX = s.baseX + driftOffset;
-              if (currentX < 0) currentX += w;
-              else if (currentX > w) currentX -= w;
-
-              // Breathing twinkle shimmer
-              var tw = Math.sin(elapsedTime * s.twinkleSpeed + s.twinklePhase) * s.twinkleAmp;
-              var alpha = Math.max(0.05, Math.min(0.28, s.baseAlpha + tw)) * s.introAlpha;
-
-              if (s.type === 'sparkle') {
-                drawSparkle(ctx, currentX, s.y, s.size, alpha);
+            if (s.alpha > 0.005) {
+              if (s.isFourPoint) {
+                drawFourPointStar(ctx, s.x, s.y, s.size, s.alpha);
               } else {
-                drawDot(ctx, currentX, s.y, s.size, alpha);
-              }
-
-              // Smooth recycle above the viewport
-              if (s.y > h + 15) {
-                s.y = -10 - Math.random() * 25;
-                s.baseX = Math.random() * w;
-                s.introAlpha = 1.0;
+                drawDotStar(ctx, s.x, s.y, s.size, s.alpha);
               }
             }
           }
 
+          ctx.restore();
           rafId = requestAnimationFrame(tick);
         }
 
+        function onResize() {
+          updateDimensions();
+          buildStarfield();
+          if (prefersReducedMotion) {
+            renderStatic();
+          }
+        }
+
         function onVisibilityChange() {
+          if (prefersReducedMotion) return;
           if (document.hidden) {
             if (rafId) {
               cancelAnimationFrame(rafId);
               rafId = 0;
             }
           } else {
-            if (!RM && !rafId && !isDestroyed) {
+            if (!rafId && !isDestroyed) {
               lastTime = performance.now();
               rafId = requestAnimationFrame(tick);
             }
           }
         }
 
-        function init() {
-          isDestroyed = false;
-          resize();
-          window.addEventListener('resize', resize);
-          document.addEventListener('visibilitychange', onVisibilityChange);
-
-          if (RM) {
+        function onMotionChange(e) {
+          prefersReducedMotion = e.matches;
+          if (prefersReducedMotion) {
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = 0;
+            }
             renderStatic();
           } else {
+            startTime = performance.now();
+            lastTime = performance.now();
+            buildStarfield();
+            rafId = requestAnimationFrame(tick);
+          }
+        }
+
+        function init() {
+          isDestroyed = false;
+          updateDimensions();
+          buildStarfield();
+
+          window.addEventListener('resize', onResize);
+          document.addEventListener('visibilitychange', onVisibilityChange);
+          if (mqlMotion.addEventListener) {
+            mqlMotion.addEventListener('change', onMotionChange);
+          } else if (mqlMotion.addListener) {
+            mqlMotion.addListener(onMotionChange);
+          }
+
+          if (prefersReducedMotion) {
+            renderStatic();
+          } else {
+            startTime = performance.now();
             lastTime = performance.now();
             rafId = requestAnimationFrame(tick);
           }
@@ -2548,9 +2523,16 @@
             cancelAnimationFrame(rafId);
             rafId = 0;
           }
-          window.removeEventListener('resize', resize);
+          window.removeEventListener('resize', onResize);
           document.removeEventListener('visibilitychange', onVisibilityChange);
-          ctx.clearRect(0, 0, w, h);
+          if (mqlMotion.removeEventListener) {
+            mqlMotion.removeEventListener('change', onMotionChange);
+          } else if (mqlMotion.removeListener) {
+            mqlMotion.removeListener(onMotionChange);
+          }
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
         }
 
         init();

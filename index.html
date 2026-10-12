@@ -106,7 +106,9 @@
       max-width: 1360px;
       margin-inline: auto;
       padding-inline: var(--gutter);
-      padding-block: 0
+      padding-block: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .mono {
@@ -318,6 +320,17 @@
       user-select: none;
       pointer-events: none;
       white-space: nowrap
+    }
+
+    .starfield-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .lanyard-canvas {
@@ -1170,6 +1183,7 @@
     }
   </style>
 
+  <canvas id="starfieldCanvas" class="starfield-canvas" aria-hidden="true"></canvas>
   <div class="cursor" id="cursor" aria-hidden="true"><span>Drag</span></div>
   <canvas id="lanyardCanvas" class="lanyard-canvas" aria-hidden="true"></canvas>
 
@@ -2230,6 +2244,303 @@
             bKick();
           }
         });
+      })();
+
+      /* 5. Subtle Cosmic Starfield Background */
+      window.Starfield = (function () {
+        var canvas = document.getElementById('starfieldCanvas');
+        if (!canvas) return { init: function () { }, destroy: function () { } };
+
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return { init: function () { }, destroy: function () { } };
+
+        var stars = [];
+        var rafId = 0;
+        var startTime = 0;
+        var lastTime = 0;
+        var dpr = 1;
+        var width = 0, height = 0;
+        var isMobile = false;
+        var isDestroyed = false;
+
+        var mqlMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        var prefersReducedMotion = mqlMotion.matches;
+
+        function updateDimensions() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (width < 768);
+          var maxDpr = isMobile ? 1.5 : 2;
+          dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+        }
+
+        function createStar(w, h, isMob) {
+          var isFourPoint = Math.random() < 0.085; // ~8.5% four-point sparkle stars
+          var baseSize = isFourPoint
+            ? (isMob ? 2.2 : 2.6) + Math.random() * (isMob ? 1.2 : 1.6) // 4-point sparkle arm (2.2 - 4.2px)
+            : (isMob ? 0.45 : 0.55) + Math.random() * (isMob ? 0.75 : 1.05); // dot radius (0.5 - 1.6px)
+
+          var targetY = Math.random() * h;
+          var x = Math.random() * w;
+          var depth = targetY / Math.max(1, h); // 0 at top, 1 at bottom
+
+          // Staggered intro delay across 6-10s: stars near top enter first, stars near bottom follow
+          var staggerDelay = (depth * 3.8) + (Math.random() * 2.2); // 0 to 6.0s
+          var introDuration = 3.2 + Math.random() * 1.8; // 3.2 to 5.0s descent duration
+          var startY = -15 - Math.random() * 30;
+
+          return {
+            isFourPoint: isFourPoint,
+            size: baseSize,
+            baseAlpha: isFourPoint
+              ? 0.12 + Math.random() * 0.12 // 0.12 - 0.24 for delicate sparkles
+              : 0.07 + Math.random() * 0.13, // 0.07 - 0.20 for quiet celestial dots
+            alpha: 0,
+            x: x,
+            baseX: x,
+            y: prefersReducedMotion ? targetY : startY,
+            startY: startY,
+            targetY: targetY,
+
+            // Entrance state
+            staggerDelay: staggerDelay,
+            introDuration: introDuration,
+            isIntroComplete: prefersReducedMotion,
+
+            // Continuous organic drift
+            speedY: (isMob ? 0.08 : 0.11) + Math.random() * (isMob ? 0.13 : 0.19), // ~7-18 px/s gentle drift
+            swayAmp: 4 + Math.random() * 12, // 4 to 16px horizontal drift
+            swayFreq: 0.0004 + Math.random() * 0.0005, // very slow sinusoidal sway
+            swayPhase: Math.random() * Math.PI * 2,
+
+            // Gentle twinkle
+            twinkleFreq: 0.0012 + Math.random() * 0.002,
+            twinklePhase: Math.random() * Math.PI * 2,
+            twinkleDepth: 0.22 + Math.random() * 0.32,
+
+            // Recycle smooth fade-in
+            recycledAt: 0
+          };
+        }
+
+        function buildStarfield() {
+          stars = [];
+          // Responsive density: increased quantity while maintaining an elegant, quiet aesthetic
+          var count = isMobile
+            ? Math.floor(Math.min(65, Math.max(38, (width * height) / 6500)))
+            : Math.floor(Math.min(160, Math.max(85, (width * height) / 12500)));
+
+          for (var i = 0; i < count; i++) {
+            stars.push(createStar(width, height, isMobile));
+          }
+        }
+
+        function drawFourPointStar(c, cx, cy, arm, alpha) {
+          c.save();
+          c.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
+          c.beginPath();
+          c.moveTo(cx, cy - arm);
+          c.quadraticCurveTo(cx, cy, cx + arm, cy);
+          c.quadraticCurveTo(cx, cy, cx, cy + arm);
+          c.quadraticCurveTo(cx, cy, cx - arm, cy);
+          c.quadraticCurveTo(cx, cy, cx, cy - arm);
+          c.closePath();
+          c.fill();
+
+          // Subtle core flare
+          c.beginPath();
+          c.arc(cx, cy, Math.max(0.6, arm * 0.22), 0, Math.PI * 2);
+          c.fillStyle = 'rgba(255, 255, 255, ' + Math.min(1, alpha * 1.5).toFixed(3) + ')';
+          c.fill();
+          c.restore();
+        }
+
+        function drawDotStar(c, cx, cy, radius, alpha) {
+          c.fillStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(3) + ')';
+          c.beginPath();
+          c.arc(cx, cy, radius, 0, Math.PI * 2);
+          c.fill();
+        }
+
+        function renderStatic() {
+          if (!ctx) return;
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+
+          for (var i = 0; i < stars.length; i++) {
+            var s = stars[i];
+            if (s.isFourPoint) {
+              drawFourPointStar(ctx, s.x, s.targetY, s.size, s.baseAlpha);
+            } else {
+              drawDotStar(ctx, s.x, s.targetY, s.size, s.baseAlpha);
+            }
+          }
+          ctx.restore();
+        }
+
+        function tick(now) {
+          if (isDestroyed) return;
+          if (!startTime) startTime = now;
+          if (!lastTime) lastTime = now;
+
+          var dt = Math.min(0.05, (now - lastTime) / 1000);
+          lastTime = now;
+          var elapsedSec = (now - startTime) / 1000;
+          var dtFactor = dt / 0.0166;
+
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+
+          for (var i = 0; i < stars.length; i++) {
+            var s = stars[i];
+
+            if (!s.isIntroComplete) {
+              // Staggered entrance phase from top of screen
+              if (elapsedSec < s.staggerDelay) {
+                continue;
+              }
+              var p = (elapsedSec - s.staggerDelay) / s.introDuration;
+              if (p >= 1) {
+                s.isIntroComplete = true;
+                s.y = s.targetY;
+                s.alpha = s.baseAlpha;
+              } else {
+                var ease = 1 - Math.pow(1 - p, 2.5);
+                s.y = s.startY + (s.targetY - s.startY) * ease;
+                var fade = Math.min(1, p * 1.5);
+                s.alpha = s.baseAlpha * fade;
+              }
+            } else {
+              // Continuous organic drift & twinkle
+              s.y += s.speedY * dtFactor;
+              s.x = s.baseX + Math.sin(now * s.swayFreq + s.swayPhase) * s.swayAmp;
+
+              var tw = 1 - s.twinkleDepth + s.twinkleDepth * Math.sin(now * s.twinkleFreq + s.twinklePhase);
+              var curAlpha = s.baseAlpha * tw;
+
+              // Smooth fade-in if recently recycled from top
+              if (s.recycledAt) {
+                var recP = Math.min(1, (now - s.recycledAt) / 1400);
+                curAlpha *= recP;
+                if (recP >= 1) s.recycledAt = 0;
+              }
+              s.alpha = curAlpha;
+
+              // Smooth recycling when leaving bottom edge
+              if (s.y > height + 16) {
+                s.y = -14;
+                s.baseX = Math.random() * width;
+                s.x = s.baseX;
+                s.alpha = 0;
+                s.recycledAt = now;
+              }
+            }
+
+            if (s.alpha > 0.005) {
+              if (s.isFourPoint) {
+                drawFourPointStar(ctx, s.x, s.y, s.size, s.alpha);
+              } else {
+                drawDotStar(ctx, s.x, s.y, s.size, s.alpha);
+              }
+            }
+          }
+
+          ctx.restore();
+          rafId = requestAnimationFrame(tick);
+        }
+
+        function onResize() {
+          updateDimensions();
+          buildStarfield();
+          if (prefersReducedMotion) {
+            renderStatic();
+          }
+        }
+
+        function onVisibilityChange() {
+          if (prefersReducedMotion) return;
+          if (document.hidden) {
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = 0;
+            }
+          } else {
+            if (!rafId && !isDestroyed) {
+              lastTime = performance.now();
+              rafId = requestAnimationFrame(tick);
+            }
+          }
+        }
+
+        function onMotionChange(e) {
+          prefersReducedMotion = e.matches;
+          if (prefersReducedMotion) {
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+              rafId = 0;
+            }
+            renderStatic();
+          } else {
+            startTime = performance.now();
+            lastTime = performance.now();
+            buildStarfield();
+            rafId = requestAnimationFrame(tick);
+          }
+        }
+
+        function init() {
+          isDestroyed = false;
+          updateDimensions();
+          buildStarfield();
+
+          window.addEventListener('resize', onResize);
+          document.addEventListener('visibilitychange', onVisibilityChange);
+          if (mqlMotion.addEventListener) {
+            mqlMotion.addEventListener('change', onMotionChange);
+          } else if (mqlMotion.addListener) {
+            mqlMotion.addListener(onMotionChange);
+          }
+
+          if (prefersReducedMotion) {
+            renderStatic();
+          } else {
+            startTime = performance.now();
+            lastTime = performance.now();
+            rafId = requestAnimationFrame(tick);
+          }
+        }
+
+        function destroy() {
+          isDestroyed = true;
+          if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          window.removeEventListener('resize', onResize);
+          document.removeEventListener('visibilitychange', onVisibilityChange);
+          if (mqlMotion.removeEventListener) {
+            mqlMotion.removeEventListener('change', onMotionChange);
+          } else if (mqlMotion.removeListener) {
+            mqlMotion.removeListener(onMotionChange);
+          }
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+
+        init();
+
+        return {
+          init: init,
+          destroy: destroy
+        };
       })();
     })();
   </script>
