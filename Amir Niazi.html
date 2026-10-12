@@ -68,21 +68,22 @@ h2{
   display:flex;justify-content:space-between;align-items:flex-start;
   gap:clamp(32px,5vw,80px);position:relative;
 }
-.hero-stage .name{flex:1 1 auto;min-width:0;padding-top:clamp(12px,2.5vw,36px)}
+.hero-stage .name{flex:1 1 auto;min-width:0;padding-top:clamp(12px,2vw,30px)}
 .hero-badge-col{
   flex:0 0 auto;display:flex;flex-direction:column;align-items:center;
-  position:relative;z-index:20;perspective:1000px;
-  margin-top:calc(-1 * (clamp(110px, 16vw, 190px) + clamp(14px, 2.4vw, 30px) + 16px));
+  position:relative;z-index:22;perspective:1000px;
+  margin-top:clamp(40px, 6vw, 90px);
 }
 .hero-badge-card{
-  width:clamp(250px,24vw,360px);
+  width:clamp(250px,24vw,340px);
   position:relative;touch-action:none;cursor:grab;
   user-select:none;-webkit-user-select:none;
   will-change:transform,filter;
-  transform-origin:52% 0%;
+  transform-origin:52.4% 0%;
   filter:drop-shadow(0 20px 32px rgba(0,0,0,.75)) drop-shadow(0 6px 12px rgba(0,0,0,.5));
   transition:filter .3s cubic-bezier(.2,.8,.2,1);
   border-radius:20px;outline:none;
+  z-index:22;
 }
 .hero-badge-card:focus-visible{outline:2px solid var(--fg);outline-offset:8px}
 .hero-badge-card.is-held{
@@ -93,12 +94,16 @@ h2{
   width:100%;height:auto;display:block;
   pointer-events:none;-webkit-user-drag:none;user-select:none;
 }
-.badge-hint{margin:12px 0 0;user-select:none;pointer-events:none;white-space:nowrap}
+.badge-hint{margin:14px 0 0;user-select:none;pointer-events:none;white-space:nowrap}
+.lanyard-canvas{
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  pointer-events:none;z-index:21;
+}
 @media (max-width:920px){
   .hero-stage{flex-direction:column;align-items:flex-start;gap:clamp(28px,6vw,44px)}
   .hero-stage .name{padding-top:0}
-  .hero-badge-col{align-self:center;width:100%;align-items:center;margin-top:0}
-  .hero-badge-card{width:clamp(240px,65vw,330px);transform-origin:52% 10%}
+  .hero-badge-col{align-self:center;width:100%;align-items:center;margin-top:clamp(24px,5vw,48px)}
+  .hero-badge-card{width:clamp(240px,65vw,320px)}
 }
 .name{
   margin:0;
@@ -183,10 +188,26 @@ h2{
 .card h4{margin:0;font:600 1.35rem/1.12 var(--font-display);letter-spacing:-.025em;text-wrap:balance}
 .card .mono{transition:color .25s}
 .card:hover{border-color:var(--fg)}
-.card:hover::before{transform:scale(1.08)}
-.p1::before{background:radial-gradient(circle at 1px 1px,var(--line-strong) 1px,transparent 1.6px) 0 0/14px 14px}
-.p2::before{background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 12px)}
-.p3::before{background:repeating-radial-gradient(circle at 78% 22%,var(--line) 0 1px,transparent 1px 15px)}
+.card .card-bg-img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+  pointer-events:none;-webkit-user-drag:none;user-select:none;
+  opacity:.88;transition:opacity .3s,transform .6s cubic-bezier(.2,.7,.2,1);
+  z-index:0;
+}
+.card:hover .card-bg-img{
+  transform:scale(1.08);
+  opacity:1;
+}
+.card > *:not(.card-bg-img){position:relative;z-index:2}
+.card.p1 .mono, .card.p1 h4,
+.card.p2 .mono, .card.p2 h4,
+.card.p3 .mono, .card.p3 h4{text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.p1::before,
+.p2::before,
+.p3::before{
+  background:linear-gradient(180deg, rgba(8,8,8,.35) 0%, rgba(8,8,8,.55) 45%, rgba(8,8,8,.94) 100%);
+  z-index:1;
+}
 .p4::before{background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/26px 26px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/26px 26px}
 .p5::before{background:repeating-conic-gradient(var(--surface-2) 0 25%,var(--surface) 0 50%) 0 0/30px 30px}
 .p6::before{background:repeating-linear-gradient(0deg,var(--line) 0 2px,transparent 2px 10px)}
@@ -304,6 +325,7 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
 </style>
 
 <div class="cursor" id="cursor" aria-hidden="true"><span>Drag</span></div>
+<canvas id="lanyardCanvas" class="lanyard-canvas" aria-hidden="true"></canvas>
 
 <nav class="nav" aria-label="Primary">
   <a class="logo" href="#top" aria-label="Amir Niazi, back to top">AN</a>
@@ -326,19 +348,19 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
         <span class="word" aria-hidden="true"><span class="ch" data-drag>A</span><span class="ch" data-drag>m</span><span class="ch" data-drag>i</span><span class="ch" data-drag>r</span></span>
         <span class="word" aria-hidden="true"><span class="ch" data-drag>N</span><span class="ch" data-drag>i</span><span class="ch" data-drag>a</span><span class="ch" data-drag>z</span><span class="ch" data-drag>i</span></span>
       </h1>
-      <div class="hero-badge-col">
+      <div class="hero-badge-col" id="heroBadgeCol">
         <div class="hero-badge-card"
              id="heroBadgeCard"
              tabindex="0"
              role="region"
              aria-label="Amir Niazi interactive ID badge. Drag with mouse or touch. Arrow keys to nudge, Space to lift or drop, R to reset."
              data-drag="card">
-          <img src="assets/card.png"
+          <img src="assets/badge_card.png"
                alt="Amir Niazi - Senior Product Designer ID Badge"
                class="hero-badge-img"
                draggable="false"
                width="820"
-               height="1824" />
+               height="854" />
         </div>
         <p class="mono hint badge-hint"><i></i>Grab and drag</p>
       </div>
@@ -399,16 +421,19 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
       </div>
       <div class="rail" id="rail" tabindex="0" role="region" aria-label="More projects on Behance" data-drag>
         <a class="card p1" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
+          <img src="assets/valet-parking.png" alt="Valet Plus Mobile Parking App UI UX Case Study Thumbnail" class="card-bg-img" draggable="false" />
           <span class="mono">Mobile app &middot; Case study</span>
           <h4>Valet Plus Mobile Parking App UI UX Case Study</h4>
         </a>
-        <a class="card p2" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
+        <a class="card p2" href="https://www.behance.net/gallery/253312193/CareerForge-AI-Resume-Builder-UIUX" target="_blank" rel="noopener" draggable="false">
+          <img src="assets/career-forge.png" alt="CareerForge AI Resume Builder UI UX Case Study Thumbnail" class="card-bg-img" draggable="false" />
           <span class="mono">Web app &middot; AI</span>
           <h4>CareerForge (AI Resume Builder UI/UX)</h4>
         </a>
-        <a class="card p3" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
-          <span class="mono">Website &middot; Redesign</span>
-          <h4>Modern UI/UX Redesign for IT Hardware Company</h4>
+        <a class="card p3" href="https://www.behance.net/gallery/256919965/FastTrack-Horse-Stable-Management-Product-Design" target="_blank" rel="noopener" draggable="false">
+          <img src="assets/fast-track.png" alt="FastTrack — Horse Stable Management Product Design Thumbnail" class="card-bg-img" draggable="false" />
+          <span class="mono">SaaS platform &middot; Product design</span>
+          <h4>FastTrack &mdash; Horse Stable Management</h4>
         </a>
         <a class="card p4" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
           <span class="mono">Website &middot; Redesign</span>
@@ -877,10 +902,27 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
     } else fallback();
   });
 
-  /* 4. Interactive Hero ID Badge Card */
+  /* 4. Interactive Physics-Based Lanyard & ID Badge */
   (function(){
     var card = document.getElementById('heroBadgeCard');
+    var canvas = document.getElementById('lanyardCanvas');
     if(!card) return;
+
+    var ctx = canvas ? canvas.getContext('2d') : null;
+    var dpr = window.devicePixelRatio || 1;
+
+    function resizeCanvas(){
+      if(!canvas || !ctx) return;
+      var w = window.innerWidth, h = window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    }
+    window.addEventListener('resize', function(){ resizeCanvas(); bKick(); });
+    window.addEventListener('scroll', function(){ bKick(); }, {passive:true});
+    resizeCanvas();
 
     var isHeld = false;
     var pointerId = null;
@@ -902,20 +944,157 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
     var scaleVal = 1, targetScale = 1;
     var bRaf = 0, lastRafTime = 0;
 
+    function renderLanyard(){
+      if(!canvas || !ctx) return;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      var cardRect = card.getBoundingClientRect();
+      // Clasp connection point at the top of the metal clasp ring
+      var claspX = cardRect.left + cardRect.width * 0.524;
+      var claspY = cardRect.top + 2;
+
+      // Top anchor point: pinned directly behind fixed navbar, aligned with rest column
+      var baseClaspX = (cardRect.left - x) + cardRect.width * 0.524;
+      var nav = document.querySelector('.nav');
+      var navH = nav ? nav.offsetHeight : 56;
+      var anchorX = baseClaspX;
+      var anchorY = Math.min(navH - 6, 48);
+
+      var strapW = Math.max(22, Math.min(34, cardRect.width * (88 / 820)));
+
+      var dx = claspX - anchorX;
+      var dy = claspY - anchorY;
+      var dist = Math.hypot(dx, dy);
+
+      var baseClaspY = (cardRect.top - y) + 2;
+      var restLen = Math.max(90, baseClaspY - anchorY);
+
+      var rad = rot * (Math.PI / 180);
+      var tanClaspX = -Math.sin(rad);
+      var tanClaspY = -Math.cos(rad);
+
+      var cp1, cp2;
+      if(dist < restLen){
+        // Slack when card is moved closer to anchor (dragged upward)
+        var slack = restLen - dist;
+        var sag = Math.min(slack * 0.8, 220);
+        cp1 = { x: anchorX, y: anchorY + dist * 0.35 + sag * 0.4 };
+        cp2 = { x: claspX + tanClaspX * (dist * 0.25), y: claspY + tanClaspY * (dist * 0.25) + sag };
+      } else {
+        // Taut strap under tension
+        cp1 = { x: anchorX + dx * 0.32, y: anchorY + dy * 0.32 };
+        cp2 = { x: claspX + tanClaspX * (dist * 0.2), y: claspY + tanClaspY * (dist * 0.2) };
+      }
+
+      var steps = 24;
+      var leftRail = [], rightRail = [], centerRail = [];
+
+      for(var i = 0; i <= steps; i++){
+        var t = i / steps;
+        var it = 1 - t;
+        var px = it*it*it*anchorX + 3*it*it*t*cp1.x + 3*it*t*t*cp2.x + t*t*t*claspX;
+        var py = it*it*it*anchorY + 3*it*it*t*cp1.y + 3*it*t*t*cp2.y + t*t*t*claspY;
+
+        var tx = 3*it*it*(cp1.x - anchorX) + 6*it*t*(cp2.x - cp1.x) + 3*t*t*(claspX - cp2.x);
+        var ty = 3*it*it*(cp1.y - anchorY) + 6*it*t*(cp2.y - cp1.y) + 3*t*t*(claspY - cp2.y);
+        var tlen = Math.hypot(tx, ty) || 1;
+        var nx = -ty / tlen;
+        var ny = tx / tlen;
+
+        var halfW = strapW / 2;
+        leftRail.push({ x: px - nx * halfW, y: py - ny * halfW });
+        rightRail.push({ x: px + nx * halfW, y: py + ny * halfW });
+        centerRail.push({ x: px, y: py, nx: nx, ny: ny, angle: Math.atan2(ty, tx) });
+      }
+
+      // Ribbon background
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(leftRail[0].x, leftRail[0].y);
+      for(var j = 1; j <= steps; j++) ctx.lineTo(leftRail[j].x, leftRail[j].y);
+      ctx.lineTo(rightRail[steps].x, rightRail[steps].y);
+      for(var j = steps - 1; j >= 0; j--) ctx.lineTo(rightRail[j].x, rightRail[j].y);
+      ctx.closePath();
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = '#fc6014';
+      ctx.fill();
+      ctx.restore();
+
+      // Ribbon border details & woven highlights
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(leftRail[0].x, leftRail[0].y);
+      for(var j = 1; j <= steps; j++) ctx.lineTo(leftRail[j].x, leftRail[j].y);
+      ctx.strokeStyle = '#b32903';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(rightRail[0].x, rightRail[0].y);
+      for(var j = 1; j <= steps; j++) ctx.lineTo(rightRail[j].x, rightRail[j].y);
+      ctx.strokeStyle = '#d83e07';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerRail[0].x, centerRail[0].y);
+      for(var j = 1; j <= steps; j++) ctx.lineTo(centerRail[j].x, centerRail[j].y);
+      ctx.strokeStyle = 'rgba(255, 140, 50, 0.4)';
+      ctx.lineWidth = strapW * 0.4;
+      ctx.stroke();
+      ctx.restore();
+
+      // Silver metal eyelet / rivet near bottom of strap
+      var eyeIdx = Math.round(steps * 0.88);
+      var eyePt = centerRail[eyeIdx];
+      if(eyePt){
+        ctx.save();
+        ctx.translate(eyePt.x, eyePt.y);
+        ctx.rotate(eyePt.angle + Math.PI / 2);
+        var g = ctx.createLinearGradient(-7, -7, 7, 7);
+        g.addColorStop(0, '#555');
+        g.addColorStop(0.3, '#eee');
+        g.addColorStop(0.7, '#666');
+        g.addColorStop(1, '#999');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
     function applyTransform(){
       if(RM){
         card.style.transform = (x || y) ? 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)' : '';
+        renderLanyard();
         return;
       }
       var totalRot = rot + hoverX * 0.4;
-      var tiltX = -hoverY * 10;
-      var tiltY = hoverX * 10;
+      var tiltX = -hoverY * 9;
+      var tiltY = hoverX * 9;
       var s = scaleVal.toFixed(3);
       card.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) ' +
                              'rotate(' + totalRot.toFixed(2) + 'deg) ' +
                              'rotateX(' + tiltX.toFixed(2) + 'deg) ' +
                              'rotateY(' + tiltY.toFixed(2) + 'deg) ' +
                              'scale(' + s + ')';
+      renderLanyard();
     }
 
     function badgeTick(t){
@@ -940,10 +1119,10 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
       if(isHeld){
         busy = true;
       } else {
-        // Spring physics return to origin
+        // Spring & pendulum physics return to origin
         if(x !== 0 || y !== 0 || vx !== 0 || vy !== 0 || rot !== 0 || vRot !== 0){
-          var k = 165;  // stiffness
-          var c = 13.2; // damping
+          var k = 150;
+          var c = 12.5;
 
           var ax = -k * x - c * vx;
           var ay = -k * y - c * vy;
@@ -952,8 +1131,8 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
           x += vx * dt;
           y += vy * dt;
 
-          var kRot = 190, cRot = 14.5;
-          var aRot = -kRot * rot - cRot * vRot;
+          var kRot = 180, cRot = 13.5;
+          var aRot = -kRot * rot - cRot * vRot - (vx * 0.05);
           vRot += aRot * dt;
           rot += vRot * dt;
 
@@ -976,6 +1155,9 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
         bRaf = requestAnimationFrame(badgeTick);
       }
     }
+
+    // Initial render
+    setTimeout(function(){ bKick(); }, 50);
 
     // Hover
     card.addEventListener('pointerenter', function(e){
@@ -1001,33 +1183,25 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
         var rawX = e.clientX - grabOffsetX;
         var rawY = e.clientY - grabOffsetY;
 
-        // Boundaries relative to hero section and viewport:
-        // Do not cover top fixed navbar or escape the hero
+        // Viewport boundaries: free movement in all directions without clipping
         var nav = document.querySelector('.nav');
-        var navH = nav ? nav.offsetHeight : 64;
-        var hero = card.closest('.hero') || document.body;
-        var heroRect = hero.getBoundingClientRect();
+        var navH = nav ? nav.offsetHeight : 56;
         var cardRect = card.getBoundingClientRect();
 
-        var baseTop = cardRect.top - y;
-        var baseBottom = cardRect.bottom - y;
         var baseLeft = cardRect.left - x;
-        var baseRight = cardRect.right - x;
+        var baseTop = cardRect.top - y;
 
-        // In the extended image, the upper ~44% is the lanyard strap emerging from behind the header.
-        // Ensure the ID badge does not cover navbar links, and the lanyard remains tethered behind the header.
-        var badgeTopAtRest = baseTop + cardRect.height * 0.44;
-        var minY = Math.min(-100, (navH + 8) - badgeTopAtRest);
-        var maxY = Math.min(280, (heroRect.bottom + 40) - baseBottom);
         var minX = 16 - baseLeft;
-        var maxX = (window.innerWidth - 16) - baseRight;
+        var maxX = (window.innerWidth - 16 - cardRect.width) - baseLeft;
+        var minY = (navH - 24) - baseTop; // unrestricted upward drag!
+        var maxY = (window.innerHeight - 30 - cardRect.height) - baseTop;
 
         x = clamp(rawX, minX, maxX);
         y = clamp(rawY, minY, maxY);
 
         // Inertial rotation based on movement speed and offset
-        var velTilt = clamp(vx * 0.015, -16, 16);
-        var posTilt = clamp(x * 0.018, -8, 8);
+        var velTilt = clamp(vx * 0.016, -18, 18);
+        var posTilt = clamp(x * 0.015, -10, 10);
         rot = velTilt + posTilt;
 
         bKick();
@@ -1082,9 +1256,9 @@ footer.foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));bord
       targetScale = isHovered ? 1.02 : 1.0;
 
       if(performance.now() - lastPt > 90){ vx = 0; vy = 0; }
-      vx = clamp(vx, -2000, 2000);
-      vy = clamp(vy, -2000, 2000);
-      vRot = clamp(rot * -4, -300, 300);
+      vx = clamp(vx, -2200, 2200);
+      vy = clamp(vy, -2200, 2200);
+      vRot = clamp(rot * -4, -320, 320);
 
       if(RM){
         x = 0; y = 0; vx = 0; vy = 0; rot = 0; vRot = 0;
