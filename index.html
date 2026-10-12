@@ -152,6 +152,44 @@
       color: var(--fg)
     }
 
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-resume-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font: 500 .75rem/1 var(--font-mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--fg);
+      background: transparent;
+      border: 1px solid var(--line-strong);
+      border-radius: 99px;
+      padding: 7px 14px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+    }
+
+    .nav-resume-btn:hover {
+      background: var(--fg);
+      color: var(--on-fg);
+      border-color: var(--fg);
+      transform: translateY(-1px);
+    }
+
+    .nav-resume-btn .download-icon {
+      transition: transform .2s ease;
+    }
+
+    .nav-resume-btn:hover .download-icon {
+      transform: translateY(1.5px);
+    }
+
     .clock {
       white-space: nowrap
     }
@@ -162,7 +200,16 @@
       }
 
       .nav-links {
-        gap: 16px
+        gap: 14px
+      }
+
+      .nav-right {
+        gap: 10px;
+      }
+
+      .nav-resume-btn {
+        padding: 5px 10px;
+        font-size: .7rem;
       }
     }
 
@@ -1127,7 +1174,18 @@
       <a href="#skills">Skills</a>
       <a href="#contact">Contact</a>
     </div>
-    <span class="mono clock" id="clock">Karachi, PK</span>
+    <div class="nav-right">
+      <span class="mono clock" id="clock">Karachi, PK</span>
+      <a href="assets/resume.pdf" download="Amir_Niazi_Resume.pdf" class="nav-resume-btn" id="resumeBtn">
+        <span>Resume</span>
+        <svg class="download-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </a>
+    </div>
   </nav>
 
   <main class="wrap" id="top">
