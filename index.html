@@ -451,6 +451,42 @@
       transform: translateX(12px)
     }
 
+    .proj-title-link {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .proj-arrow {
+      font-size: .65em;
+      color: var(--muted);
+      transition: transform .3s ease, color .3s ease;
+      display: inline-block;
+    }
+
+    .proj:hover .proj-arrow,
+    .proj-title-link:hover .proj-arrow {
+      color: var(--fg);
+      transform: translate(4px, -4px);
+    }
+
+    .live-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--fg) !important;
+      margin-top: 8px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color .2s;
+    }
+
+    .live-link:hover {
+      color: #fff !important;
+    }
+
     .proj .sub {
       margin: 0 0 20px;
       color: var(--muted);
@@ -1145,9 +1181,10 @@
           <span class="mono">Belgium</span>
           <span class="mono">Product Designer</span>
           <span class="mono">Web &amp; Mobile</span>
+          <a href="https://www.sandelia.be/" target="_blank" rel="noopener" class="mono live-link">sandelia.be &#8599;</a>
         </div>
         <div>
-          <h3>Sandelia</h3>
+          <h3><a href="https://www.sandelia.be/" target="_blank" rel="noopener" class="proj-title-link">Sandelia <span class="proj-arrow" aria-hidden="true">&#8599;</span></a></h3>
           <p class="sub">Financial management platform</p>
           <p class="body">End-to-end UX for a live financial platform serving 500+ subscription-based users. The product
             covers onboarding, invoicing, purchases, banking, tax support, reporting and AI assistants. Complex
@@ -1170,9 +1207,10 @@
           <span class="mono">Australia</span>
           <span class="mono">Product Designer</span>
           <span class="mono">Web</span>
+          <a href="https://www.medtrixo.com/" target="_blank" rel="noopener" class="mono live-link">medtrixo.com &#8599;</a>
         </div>
         <div>
-          <h3>Medtrixo</h3>
+          <h3><a href="https://www.medtrixo.com/" target="_blank" rel="noopener" class="proj-title-link">Medtrixo <span class="proj-arrow" aria-hidden="true">&#8599;</span></a></h3>
           <p class="sub">Healthcare recruitment platform</p>
           <p class="body">End-to-end UX for a live healthcare platform spanning doctor onboarding, AI-assisted CVs,
             recruitment, career services and manager and admin portals. I designed the motion and micro-interactions,
