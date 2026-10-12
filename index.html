@@ -4,6 +4,7 @@
 <head>
   <meta charset=utf8>
   <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <script>document.documentElement.classList.add('js');</script>
   <style>
     :root {
       color-scheme: light;
@@ -274,6 +275,12 @@
       z-index: 22;
       perspective: 1000px;
       margin-top: clamp(40px, 6vw, 90px);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html.js .hero-badge-card {
+        transform: translate3d(0, -120vh, 0);
+      }
     }
 
     .hero-badge-card {
@@ -1823,10 +1830,40 @@
           cachedBaseTop = cardRect.top - y;
         }
 
+        // Intro drop animation from top of screen
+        var isDropping = !RM;
+        var dropStartTime = 0;
+        var dropDelay = 120; // ms brief pause for initial paint
+        var dropDuration = 1050; // ms graceful entry duration
+        var dropStartY = 0;
+
+        function calcDropStartY() {
+          return -(cachedBaseTop + cachedCardH + 50);
+        }
+
+        function dropEase(t) {
+          if (t < 0.65) {
+            var p = t / 0.65;
+            return (1 - Math.cos(p * Math.PI)) / 2 * 1.05;
+          } else {
+            var p = (t - 0.65) / 0.35;
+            var decay = Math.exp(-4 * p);
+            return 1 + 0.05 * decay * Math.cos(p * Math.PI * 2.5);
+          }
+        }
+
+        function rotEase(t) {
+          var decay = Math.exp(-3.5 * t);
+          return -5 * decay * Math.cos(t * Math.PI * 2.5);
+        }
+
         function resizeCanvas() {
           if (!canvas || !ctx) return;
           var w = window.innerWidth, h = window.innerHeight;
           updateMetrics();
+          if (isDropping) {
+            dropStartY = calcDropStartY();
+          }
           // Mobile Optimization: Cap DPR on mobile screens to avoid clearing & drawing 3M+ pixels per frame
           var maxDpr = isTouchDevice ? 1.5 : 2;
           dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
@@ -1848,6 +1885,13 @@
         var x = 0, y = 0;
         var vx = 0, vy = 0;
         var rot = 0, vRot = 0;
+
+        if (isDropping) {
+          dropStartY = calcDropStartY();
+          y = dropStartY;
+          rot = -5;
+          applyTransform();
+        }
 
         // Hover tilt
         var hoverX = 0, hoverY = 0;
@@ -1873,6 +1917,12 @@
           var anchorX = cachedBaseLeft + cardW * 0.524;
           var anchorY = Math.min(cachedNavH - 6, 48);
 
+          // If badge is still falling from above anchor line, keep canvas clean
+          if (claspY < anchorY - 6) {
+            ctx.restore();
+            return;
+          }
+
           var strapW = Math.max(22, Math.min(34, cardW * (88 / 820)));
 
           var dx = claspX - anchorX;
@@ -1887,16 +1937,16 @@
           var tanClaspY = -Math.cos(rad);
 
           var cp1, cp2;
-          if (dist < restLen) {
+          if (isDropping || dist >= restLen) {
+            // Taut strap following falling path under tension
+            cp1 = { x: anchorX + dx * 0.32, y: anchorY + dy * 0.32 };
+            cp2 = { x: claspX + tanClaspX * (dist * 0.2), y: claspY + tanClaspY * (dist * 0.2) };
+          } else {
             // Slack when card is moved closer to anchor (dragged upward)
             var slack = restLen - dist;
             var sag = Math.min(slack * 0.8, 220);
             cp1 = { x: anchorX, y: anchorY + dist * 0.35 + sag * 0.4 };
             cp2 = { x: claspX + tanClaspX * (dist * 0.25), y: claspY + tanClaspY * (dist * 0.25) + sag };
-          } else {
-            // Taut strap under tension
-            cp1 = { x: anchorX + dx * 0.32, y: anchorY + dy * 0.32 };
-            cp2 = { x: claspX + tanClaspX * (dist * 0.2), y: claspY + tanClaspY * (dist * 0.2) };
           }
 
           var steps = isTouchDevice ? 16 : 24;
@@ -2037,6 +2087,37 @@
           lastRafTime = t;
           var busy = false;
 
+          // Intro drop animation phase from top of screen
+          if (isDropping) {
+            if (!dropStartTime) {
+              dropStartTime = t;
+            }
+            var elapsed = t - dropStartTime;
+            if (elapsed < dropDelay) {
+              y = dropStartY;
+              rot = -5;
+              busy = true;
+            } else {
+              var prog = Math.min(1, (elapsed - dropDelay) / dropDuration);
+              var factor = dropEase(prog);
+              y = dropStartY * (1 - factor);
+              rot = rotEase(prog);
+              if (prog >= 1) {
+                isDropping = false;
+                y = 0;
+                rot = 0;
+                vx = 0;
+                vy = 0;
+                vRot = 0;
+              } else {
+                busy = true;
+              }
+            }
+            applyTransform();
+            bRaf = busy ? requestAnimationFrame(badgeTick) : 0;
+            return;
+          }
+
           // Hover interpolation
           var hFactor = isHeld ? 0.2 : 0.12;
           hoverX += (targetHoverX - hoverX) * hFactor;
@@ -2091,8 +2172,9 @@
           }
         }
 
-        // Initial render
-        setTimeout(function () { bKick(); }, 50);
+        // Initial render & drop kickoff
+        bKick();
+        setTimeout(function () { bKick(); }, 30);
 
         // Hover
         card.addEventListener('pointerenter', function (e) {
@@ -2157,6 +2239,9 @@
         // Grab
         card.addEventListener('pointerdown', function (e) {
           if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (isDropping) {
+            isDropping = false;
+          }
           updateMetrics();
           isHeld = true;
           pointerId = e.pointerId;
@@ -2204,6 +2289,9 @@
 
         // Keyboard accessibility
         card.addEventListener('keydown', function (e) {
+          if (isDropping) {
+            isDropping = false;
+          }
           var step = e.shiftKey ? 60 : 30;
           if (e.key === 'ArrowLeft') {
             e.preventDefault(); x -= step; vx -= step * 5; bKick();
