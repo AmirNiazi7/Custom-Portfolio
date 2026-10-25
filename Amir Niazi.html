@@ -353,6 +353,7 @@
       z-index: 0;
       user-select: none;
       -webkit-user-select: none;
+      opacity: 0.65;
     }
 
     .lanyard-canvas {
@@ -443,11 +444,11 @@
 
     .tag span {
       display: block;
-      color: var(--muted)
+      color: var(--fg);
     }
 
     .tag span:last-child {
-      color: var(--fg)
+      color: var(--muted);
     }
 
     .lede {
@@ -746,20 +747,19 @@
     .card.p3 .mono,
     .card.p3 h4,
     .card.p4 .mono,
-    .card.p4 h4 {
+    .card.p4 h4,
+    .card.p5 .mono,
+    .card.p5 h4 {
       text-shadow: 0 2px 10px rgba(0, 0, 0, .9)
     }
 
     .p1::before,
     .p2::before,
     .p3::before,
-    .p4::before {
+    .p4::before,
+    .p5::before {
       background: linear-gradient(180deg, rgba(8, 8, 8, .35) 0%, rgba(8, 8, 8, .55) 45%, rgba(8, 8, 8, .94) 100%);
       z-index: 1;
-    }
-
-    .p5::before {
-      background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface) 0 50%) 0 0/30px 30px
     }
 
     .p6::before {
@@ -942,34 +942,47 @@
       box-shadow: 0 18px 50px rgba(0, 0, 0, .7)
     }
 
+    .sec-sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.98rem, 1.3vw, 1.15rem);
+      max-width: 52ch;
+      line-height: 1.5;
+    }
+
     .c-design {
-      border: 1px solid var(--line-strong);
-      background: var(--bg)
+      background: var(--fg);
+      color: var(--on-fg);
+      border: 1px solid var(--fg);
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(255, 255, 255, .08);
     }
 
     .c-tool {
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-strong);
       background: var(--surface-2);
-      color: #d8d8d8
+      color: #dedede;
     }
 
     .c-ai {
-      background: var(--fg);
-      color: var(--on-fg);
-      border: 1px solid var(--fg)
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--muted);
     }
 
     .legend .l-design {
-      border: 1px solid var(--line-strong)
+      background: var(--fg);
+      border: 1px solid var(--fg);
     }
 
     .legend .l-tool {
       background: var(--surface-2);
-      border: 1px solid var(--line-strong)
+      border: 1px solid var(--line-strong);
     }
 
     .legend .l-ai {
-      background: var(--fg)
+      background: var(--surface);
+      border: 1px solid var(--line);
     }
 
     .btn {
@@ -1040,17 +1053,41 @@
 
     /* Contact */
     .contact h2 {
-      font-size: clamp(2.6rem, 9vw, 8rem);
-      line-height: .92;
-      letter-spacing: -.05em;
-      max-width: 14ch
+      font-size: clamp(2.5rem, 7.5vw, 6.8rem);
+      line-height: .96;
+      letter-spacing: -.045em;
+      max-width: 20ch;
+    }
+
+    .contact-lede {
+      margin-top: clamp(18px, 2.5vw, 28px);
+      max-width: 62ch;
+      font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+      line-height: 1.55;
+      color: #cfcfcf;
     }
 
     .contact-grid {
-      margin-top: clamp(36px, 6vw, 80px);
+      margin-top: clamp(28px, 4.5vw, 56px);
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      border-top: 1px solid var(--line)
+      border-top: 1px solid var(--line);
+    }
+
+    .contact-closing {
+      margin-top: clamp(24px, 3.5vw, 40px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .contact-closing i {
+      width: 24px;
+      height: 1px;
+      background: var(--line-strong);
+      display: inline-block;
     }
 
     .crow {
@@ -1889,7 +1926,7 @@
     <header class="hero">
       <div class="hero-stage">
         <div class="hero-left-col">
-          <p class="mono eyebrow">Senior UI/UX Designer &middot; Product design &amp; vibe coding</p>
+          <p class="mono eyebrow">SENIOR PRODUCT DESIGNER &middot; WEB, MOBILE &amp; SAAS</p>
           <h1 class="name" data-dragzone>
             <span class="sr">Amir Niazi</span>
             <span class="word" aria-hidden="true"><span class="ch" data-drag>A</span><span class="ch"
@@ -1944,11 +1981,9 @@
         </div>
       </div>
       <div class="hero-foot">
-        <p class="tag"><span>Design it.</span><span>Code it.</span><span>Ship it.</span></p>
+        <p class="tag"><span>Designed with purpose.</span><span>Built with AI.</span></p>
         <div>
-          <p class="lede">I turn complex requirements into intuitive web and mobile products, from client discovery and
-            user flows to high-fidelity interfaces and interactive prototypes. Then I use AI-assisted coding to carry
-            the designs into frontend implementation alongside developers.</p>
+          <p class="lede">I turn complex ideas into intuitive SaaS, web and mobile experiences. From client discovery and user flows to polished interfaces and design systems, I own the design process and collaborate closely with clients and developers. I also use AI-assisted coding to bring my designs to life, test interactions and refine the experience.</p>
           <ul class="stats">
             <li><b>3+</b><span>Years in product design</span></li>
             <li><b>100+</b><span>UI/UX projects completed</span></li>
@@ -2052,17 +2087,12 @@
             <span class="mono">Financial platform &middot; Product design</span>
             <h4>Sandelia Product Design</h4>
           </a>
-          <a class="card p5" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
-            <span class="mono">Mobile app &middot; Banking</span>
-            <h4>NZ Banking App UI Design</h4>
-          </a>
-          <a class="card p6" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
-            <span class="mono">Travel &middot; UI design</span>
-            <h4>SkySail: Intuitive Travel UI Design</h4>
-          </a>
-          <a class="card p7" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener" draggable="false">
-            <span class="mono">Website &middot; Redesign</span>
-            <h4>Simply Southern Pups UI/UX Redesign</h4>
+          <a class="card p5" href="https://play.google.com/store/apps/details?id=com.uteira.uteira&hl=en"
+            target="_blank" rel="noopener" draggable="false">
+            <img src="assets/uteira.png" alt="Uteira Mobile App UI UX Case Study Thumbnail" class="card-bg-img"
+              draggable="false" />
+            <span class="mono">Mobile app &middot; Language learning</span>
+            <h4>Uteira Mobile App</h4>
           </a>
           <a class="card cta" href="https://www.behance.net/amirniazi5" target="_blank" rel="noopener"
             draggable="false">
@@ -2114,24 +2144,26 @@
 
     <section class="sec" id="skills">
       <div class="sec-head">
-        <h2>Skills &amp; tools</h2>
+        <div>
+          <h2>Skills that bring products to life.</h2>
+          <p class="sec-sub">Product thinking, thoughtful interfaces and the tools to explore how they work.</p>
+        </div>
         <div class="mono legend" aria-hidden="true">
-          <span><i class="l-design"></i>Design</span>
-          <span><i class="l-tool"></i>Tools</span>
-          <span><i class="l-ai"></i>AI &amp; code</span>
+          <span><i class="l-design"></i>Product design</span>
+          <span><i class="l-tool"></i>Design &amp; collaboration</span>
+          <span><i class="l-ai"></i>AI &amp; prototyping</span>
         </div>
       </div>
       <ul class="toss" id="toss" data-drag aria-label="Skills and tools">
-        <li class="chip c-design">Product design</li>
-        <li class="chip c-design">UI/UX design</li>
-        <li class="chip c-design">User flows</li>
+        <li class="chip c-design">Product Design</li>
+        <li class="chip c-design">UI/UX Design</li>
+        <li class="chip c-design">User Flows</li>
         <li class="chip c-design">Wireframing</li>
-        <li class="chip c-design">Prototyping</li>
-        <li class="chip c-design">Design systems</li>
-        <li class="chip c-design">Web interfaces</li>
-        <li class="chip c-design">Mobile interfaces</li>
-        <li class="chip c-design">E-commerce design</li>
-        <li class="chip c-design">Motion &amp; micro-interactions</li>
+        <li class="chip c-design">Interactive Prototyping</li>
+        <li class="chip c-design">Design Systems</li>
+        <li class="chip c-design">Web &amp; Mobile Design</li>
+        <li class="chip c-design">SaaS &amp; E-commerce Design</li>
+        <li class="chip c-design">Motion &amp; Micro-interactions</li>
         <li class="chip c-tool">Figma</li>
         <li class="chip c-tool">Figma Make</li>
         <li class="chip c-tool">Adobe XD</li>
@@ -2139,9 +2171,15 @@
         <li class="chip c-tool">Adobe Photoshop</li>
         <li class="chip c-tool">Notion</li>
         <li class="chip c-tool">Slack</li>
-        <li class="chip c-ai">Vibe coding</li>
+        <li class="chip c-tool">Client Communication</li>
+        <li class="chip c-tool">Design Project Ownership</li>
+        <li class="chip c-tool">Developer Collaboration</li>
+        <li class="chip c-ai">AI-Assisted Coding</li>
+        <li class="chip c-ai">Figma to Working Prototypes</li>
+        <li class="chip c-ai">Interaction Testing</li>
         <li class="chip c-ai">Claude</li>
         <li class="chip c-ai">Antigravity</li>
+        <li class="chip c-ai">Figma MCP</li>
         <li class="chip c-ai">Git</li>
         <li class="chip c-ai">GitHub</li>
       </ul>
@@ -2328,7 +2366,8 @@
 
     <section class="sec contact" id="contact">
       <div class="sec-head"><span class="mono">Contact</span><span class="mono">Open to new projects</span></div>
-      <h2>Have a product to design and ship?</h2>
+      <h2>Let’s design your<br>next great product.</h2>
+      <p class="contact-lede">I help teams turn complex ideas into clear, intuitive web and mobile experiences. From discovery and user flows to polished interfaces and design systems, I lead the design process and collaborate closely with clients and developers. I also use AI-assisted coding to bring my designs to life and test how they work.</p>
       <div class="contact-grid">
         <div class="crow">
           <div><span class="mono">Email</span><span class="val" id="email">amirniazi369@gmail.com</span></div>
@@ -2341,11 +2380,12 @@
           <div><span class="mono">Behance</span><span class="val">behance.net/amirniazi5</span></div><span
             class="arrow">&#8599;</span>
         </a>
-        <a class="crow" href="https://www.linkedin.com/in/amirniaziuiux" target="_blank" rel="noopener">
-          <div><span class="mono">LinkedIn</span><span class="val">linkedin.com/in/amirniaziuiux</span></div><span
+        <a class="crow" href="https://www.linkedin.com/in/amirniaziuiux/" target="_blank" rel="noopener">
+          <div><span class="mono">LinkedIn</span><span class="val">linkedin.com/in/amirniaziuiux/</span></div><span
             class="arrow">&#8599;</span>
         </a>
       </div>
+      <p class="mono contact-closing"><i></i>Open to Product Designer opportunities and meaningful collaborations.</p>
     </section>
 
     <footer class="foot">
@@ -3161,18 +3201,18 @@
           var baseAlpha;
 
           if (isFourPoint) {
-            baseSize = (isMob ? 2.4 : 3.0) + Math.random() * (isMob ? 1.4 : 2.2); // 4-point sparkle arm length (2.4 - 5.2px)
-            baseAlpha = 0.65 + Math.random() * 0.30; // 0.65 - 0.95
+            baseSize = (isMob ? 2.2 : 2.8) + Math.random() * (isMob ? 1.2 : 1.8); // 4-point sparkle arm length
+            baseAlpha = 0.45 + Math.random() * 0.22; // 0.45 - 0.67
           } else if (isProminent) {
-            baseSize = (isMob ? 1.3 : 1.6) + Math.random() * (isMob ? 0.6 : 0.9); // radius (1.3 - 2.5px)
-            baseAlpha = 0.75 + Math.random() * 0.22; // 0.75 - 0.97
+            baseSize = (isMob ? 1.2 : 1.4) + Math.random() * (isMob ? 0.5 : 0.7); // radius
+            baseAlpha = 0.50 + Math.random() * 0.20; // 0.50 - 0.70
           } else if (isMicro) {
-            baseSize = (isMob ? 0.45 : 0.55) + Math.random() * (isMob ? 0.35 : 0.45); // radius (0.45 - 1.0px)
-            baseAlpha = 0.25 + Math.random() * 0.25; // 0.25 - 0.50
+            baseSize = (isMob ? 0.40 : 0.50) + Math.random() * (isMob ? 0.30 : 0.40); // radius
+            baseAlpha = 0.18 + Math.random() * 0.18; // 0.18 - 0.36
           } else {
             // Medium star
-            baseSize = (isMob ? 0.85 : 1.05) + Math.random() * (isMob ? 0.45 : 0.55); // radius (0.85 - 1.6px)
-            baseAlpha = 0.50 + Math.random() * 0.28; // 0.50 - 0.78
+            baseSize = (isMob ? 0.75 : 0.95) + Math.random() * (isMob ? 0.40 : 0.50); // radius
+            baseAlpha = 0.32 + Math.random() * 0.20; // 0.32 - 0.52
           }
 
           var x = Math.random() * w;
